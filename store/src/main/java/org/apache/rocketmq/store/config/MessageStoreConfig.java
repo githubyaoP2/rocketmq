@@ -23,21 +23,24 @@ import org.apache.rocketmq.store.ConsumeQueue;
 public class MessageStoreConfig {
     //The root directory in which the log data is kept
     @ImportantField
-    private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
+    private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";//broker存储根目录
 
     //The directory in which the commitlog is kept
     @ImportantField
     private String storePathCommitLog = System.getProperty("user.home") + File.separator + "store"
-        + File.separator + "commitlog";
+        + File.separator + "commitlog";//commitLog存储目录
 
     // CommitLog file size,default is 1G
-    private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;
+    private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;//commitLog大小
     // ConsumeQueue file size,default is 30W
-    private int mappedFileSizeConsumeQueue = 300000 * ConsumeQueue.CQ_STORE_UNIT_SIZE;
+    private int mappedFileSizeConsumeQueue = 300000 * ConsumeQueue.CQ_STORE_UNIT_SIZE;//consumerQueue大小，每条20字节，30w条
+
+   //todo:这三个关于扩展队列的暂时不清楚
+
     // enable consume queue ext
-    private boolean enableConsumeQueueExt = false;
+    private boolean enableConsumeQueueExt = false;//消费速度跟不上时的扩展 ？
     // ConsumeQueue extend file size, 48M
-    private int mappedFileSizeConsumeQueueExt = 48 * 1024 * 1024;
+    private int mappedFileSizeConsumeQueueExt = 48 * 1024 * 1024;//扩展消费队列大小
     // Bit count of filter bit map.
     // this will be set by pipe of calculate filter bit map.
     private int bitMapLengthConsumeQueueExt = 64;
@@ -45,18 +48,18 @@ public class MessageStoreConfig {
     // CommitLog flush interval
     // flush data to disk
     @ImportantField
-    private int flushIntervalCommitLog = 500;
+    private int flushIntervalCommitLog = 500;//刷盘的间隔时间
 
     // Only used if TransientStorePool enabled
     // flush data to FileChannel
     @ImportantField
-    private int commitIntervalCommitLog = 200;
+    private int commitIntervalCommitLog = 200;//提交消息到通道的时间
 
     /**
      * introduced since 4.0.x. Determine whether to use mutex reentrantLock when putting message.<br/>
      * By default it is set to false indicating using spin lock when putting message.
      */
-    private boolean useReentrantLockWhenPutMessage = false;
+    private boolean useReentrantLockWhenPutMessage = false;//自旋或可重入锁
 
     // Whether schedule flush,default is real-time
     @ImportantField

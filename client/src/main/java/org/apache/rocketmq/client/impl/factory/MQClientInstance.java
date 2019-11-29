@@ -636,7 +636,7 @@ public class MQClientInstance {
                             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
                         }
 
-                        if (changed) {
+                        if (changed) {//从namesrv拿到的路由信息与本地的路由信息进行比较，如果有改变也更新所有的生产者和消费者的路由信息
                             TopicRouteData cloneTopicRouteData = topicRouteData.cloneTopicRouteData();
 
                             for (BrokerData bd : topicRouteData.getBrokerDatas()) {

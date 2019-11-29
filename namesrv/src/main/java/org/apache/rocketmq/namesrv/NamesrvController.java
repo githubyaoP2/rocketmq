@@ -47,13 +47,13 @@ public class NamesrvController {
     private final NettyServerConfig nettyServerConfig;
 
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
-        "NSScheduledThread"));
-    private final KVConfigManager kvConfigManager;
-    private final RouteInfoManager routeInfoManager;
+        "NSScheduledThread"));//定时任务线程池，执行两个任务
+    private final KVConfigManager kvConfigManager;//读取或变更NameServer的配置属性
+    private final RouteInfoManager routeInfoManager;//记录broker、topic信息
 
     private RemotingServer remotingServer;
 
-    private BrokerHousekeepingService brokerHousekeepingService;
+    private BrokerHousekeepingService brokerHousekeepingService;//BrokerHouseKeepingService 实现 ChannelEventListener接口，可以说是通道在发送异常时的回调方法（Nameserver与 Broker的连接通道在关闭、通道发送异常、通道空闲时），在上述数据结构中移除已宕机的 Broker
 
     private ExecutorService remotingExecutor;
 
@@ -90,7 +90,7 @@ public class NamesrvController {
             public void run() {
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
-        }, 5, 10, TimeUnit.SECONDS);
+        }, 5, 10, TimeUnit.SECONDS);//每隔10s扫描broker
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
@@ -98,7 +98,7 @@ public class NamesrvController {
             public void run() {
                 NamesrvController.this.kvConfigManager.printAllPeriodically();
             }
-        }, 1, 10, TimeUnit.MINUTES);
+        }, 1, 10, TimeUnit.MINUTES);//每隔10s打印kv键值对
 
         if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
             // Register a listener to reload SslContext
