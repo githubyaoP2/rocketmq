@@ -62,48 +62,48 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 public class DefaultMessageStore implements MessageStore {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private final MessageStoreConfig messageStoreConfig;
+    private final MessageStoreConfig messageStoreConfig;//存储路径、commitLog大小，刷盘频率等配置信息
     // CommitLog
     private final CommitLog commitLog;
 
-    private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
+    private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;//topic相关队列信息
 
-    private final FlushConsumeQueueService flushConsumeQueueService;
+    private final FlushConsumeQueueService flushConsumeQueueService;//刷盘服务线程
 
-    private final CleanCommitLogService cleanCommitLogService;
+    private final CleanCommitLogService cleanCommitLogService;//过期文件删除线程
 
-    private final CleanConsumeQueueService cleanConsumeQueueService;
+    private final CleanConsumeQueueService cleanConsumeQueueService;//过期queue文件删除线程
 
-    private final IndexService indexService;
+    private final IndexService indexService;//索引服务
 
-    private final AllocateMappedFileService allocateMappedFileService;
+    private final AllocateMappedFileService allocateMappedFileService;//MappedFile分配线程
 
-    private final ReputMessageService reputMessageService;
+    private final ReputMessageService reputMessageService;//转发线程，commitLog->consumequeue,index
 
-    private final HAService haService;
+    private final HAService haService;//主从同步
 
-    private final ScheduleMessageService scheduleMessageService;
+    private final ScheduleMessageService scheduleMessageService;//定时任务调度器
 
-    private final StoreStatsService storeStatsService;
+    private final StoreStatsService storeStatsService;//存储统计服务
 
-    private final TransientStorePool transientStorePool;
+    private final TransientStorePool transientStorePool;//ByteBuffer池
 
     private final RunningFlags runningFlags = new RunningFlags();
     private final SystemClock systemClock = new SystemClock();
 
     private final ScheduledExecutorService scheduledExecutorService =
         Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("StoreScheduledThread"));
-    private final BrokerStatsManager brokerStatsManager;
-    private final MessageArrivingListener messageArrivingListener;
+    private final BrokerStatsManager brokerStatsManager;//broker统计服务
+    private final MessageArrivingListener messageArrivingListener;//消息到达监听器
     private final BrokerConfig brokerConfig;
 
     private volatile boolean shutdown = true;
 
-    private StoreCheckpoint storeCheckpoint;
+    private StoreCheckpoint storeCheckpoint;//刷盘检测点
 
     private AtomicLong printTimes = new AtomicLong(0);
 
-    private final LinkedList<CommitLogDispatcher> dispatcherList;
+    private final LinkedList<CommitLogDispatcher> dispatcherList;//转发 comitlog 日志，主要是从 commitlog 转发到 consumeQueue、index 文件
 
     private RandomAccessFile lockFile;
 
@@ -387,7 +387,7 @@ public class DefaultMessageStore implements MessageStore {
             return new PutMessageResult(PutMessageStatus.PROPERTIES_SIZE_EXCEEDED, null);
         }
 
-        if (this.isOSPageCacheBusy()) {
+        if (this.isOSPageCacheBusy()) {//操作系统页是否繁忙
             return new PutMessageResult(PutMessageStatus.OS_PAGECACHE_BUSY, null);
         }
 
@@ -398,10 +398,10 @@ public class DefaultMessageStore implements MessageStore {
         if (elapsedTime > 500) {
             log.warn("putMessage not in lock elapsed time(ms)={}, bodyLength={}", elapsedTime, msg.getBody().length);
         }
-        this.storeStatsService.setPutMessageEntireTimeMax(elapsedTime);
+        this.storeStatsService.setPutMessageEntireTimeMax(elapsedTime);//记录相关统计信息
 
         if (null == result || !result.isOk()) {
-            this.storeStatsService.getPutMessageFailedTimes().incrementAndGet();
+            this.storeStatsService.getPutMessageFailedTimes().incrementAndGet();//记录失败次数
         }
 
         return result;
@@ -466,10 +466,10 @@ public class DefaultMessageStore implements MessageStore {
     @Override
     public boolean isOSPageCacheBusy() {
         long begin = this.getCommitLog().getBeginTimeInLock();
-        long diff = this.systemClock.now() - begin;
+        long diff = this.systemClock.now() - begin;//即往内存映射文件或pageCache追加一条消息所耗时间
 
         return diff < 10000000
-                && diff > this.messageStoreConfig.getOsPageCacheBusyTimeOutMills();
+                && diff > this.messageStoreConfig.getOsPageCacheBusyTimeOutMills();//如果一次消息追加过程的时间超过了Broker配置文件osPageCacheBusyTimeOutMills，则认为pageCache繁忙，osPageCacheBusyTimeOutMills默认值为1000，表示1s
     }
 
     @Override

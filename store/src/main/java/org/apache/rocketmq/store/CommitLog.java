@@ -547,7 +547,8 @@ public class CommitLog {
         String topic = msg.getTopic();
         int queueId = msg.getQueueId();
 
-        final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
+        final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());//获取消息类型（事务消息，非事务消息，Commit消息。
+
         if (tranType == MessageSysFlag.TRANSACTION_NOT_TYPE
             || tranType == MessageSysFlag.TRANSACTION_COMMIT_TYPE) {
             // Delay Delivery
@@ -571,9 +572,9 @@ public class CommitLog {
 
         long elapsedTimeInLock = 0;
         MappedFile unlockMappedFile = null;
-        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
+        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();//获取一个 MappedFile 对象，内存映射的具体实现
 
-        putMessageLock.lock(); //spin or ReentrantLock ,depending on store config
+        putMessageLock.lock(); //spin or ReentrantLock ,depending on store config 追加消息需要加锁，串行化处理
         try {
             long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
             this.beginTimeInLock = beginLockTimestamp;
@@ -591,7 +592,7 @@ public class CommitLog {
                 return new PutMessageResult(PutMessageStatus.CREATE_MAPEDFILE_FAILED, null);
             }
 
-            result = mappedFile.appendMessage(msg, this.appendMessageCallback);
+            result = mappedFile.appendMessage(msg, this.appendMessageCallback);//写入消息
             switch (result.getStatus()) {
                 case PUT_OK:
                     break;
@@ -639,8 +640,8 @@ public class CommitLog {
         storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).incrementAndGet();
         storeStatsService.getSinglePutMessageTopicSizeTotal(topic).addAndGet(result.getWroteBytes());
 
-        handleDiskFlush(result, putMessageResult, msg);
-        handleHA(result, putMessageResult, msg);
+        handleDiskFlush(result, putMessageResult, msg);//刷盘
+        handleHA(result, putMessageResult, msg);//主从同步
 
         return putMessageResult;
     }
