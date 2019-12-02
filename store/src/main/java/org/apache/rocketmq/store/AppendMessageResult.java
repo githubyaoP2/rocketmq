@@ -42,13 +42,13 @@ public class AppendMessageResult {
 
     public AppendMessageResult(AppendMessageStatus status, long wroteOffset, int wroteBytes, String msgId,
         long storeTimestamp, long logicsOffset, long pagecacheRT) {
-        this.status = status;
-        this.wroteOffset = wroteOffset;
-        this.wroteBytes = wroteBytes;
-        this.msgId = msgId;
-        this.storeTimestamp = storeTimestamp;
-        this.logicsOffset = logicsOffset;
-        this.pagecacheRT = pagecacheRT;
+        this.status = status;//消息追加成果
+        this.wroteOffset = wroteOffset;//消息的偏移量，相对于整个commitLog
+        this.wroteBytes = wroteBytes;//消息待写入字节
+        this.msgId = msgId;//消息id
+        this.storeTimestamp = storeTimestamp;//消息写入时间戳
+        this.logicsOffset = logicsOffset;//消息队列偏移量
+        this.pagecacheRT = pagecacheRT;//消息写入消耗时间
     }
 
     public long getPagecacheRT() {

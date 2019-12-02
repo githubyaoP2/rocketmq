@@ -42,27 +42,27 @@ import org.apache.rocketmq.store.util.LibC;
 import sun.nio.ch.DirectBuffer;
 
 public class MappedFile extends ReferenceResource {
-    public static final int OS_PAGE_SIZE = 1024 * 4;
+    public static final int OS_PAGE_SIZE = 1024 * 4;//OSPage大小
     protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
+    private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);//所有 MappedFile 实例已使用字节总数
 
-    private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
-    protected final AtomicInteger wrotePosition = new AtomicInteger(0);
-    protected final AtomicInteger committedPosition = new AtomicInteger(0);
-    private final AtomicInteger flushedPosition = new AtomicInteger(0);
-    protected int fileSize;
-    protected FileChannel fileChannel;
+    private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);//MappedFile个数
+    protected final AtomicInteger wrotePosition = new AtomicInteger(0);//当前MappedFile对象当前写指针
+    protected final AtomicInteger committedPosition = new AtomicInteger(0);//当前提交的指针
+    private final AtomicInteger flushedPosition = new AtomicInteger(0);//当前刷写到磁盘的指针
+    protected int fileSize;//文件总大小
+    protected FileChannel fileChannel;//文件通道
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
      */
-    protected ByteBuffer writeBuffer = null;
-    protected TransientStorePool transientStorePool = null;
+    protected ByteBuffer writeBuffer = null;//如果开启了transientStorePoolEnable，消息会写入堆外内存，然后提交到 PageCache 并最终刷写到磁盘
+    protected TransientStorePool transientStorePool = null;//ByteBuffer的缓冲池，堆外内存，transientStorePoolEnable 为 true 时生效
     private String fileName;
-    private long fileFromOffset;
+    private long fileFromOffset;//文件序号
     private File file;
-    private MappedByteBuffer mappedByteBuffer;
-    private volatile long storeTimestamp = 0;
+    private MappedByteBuffer mappedByteBuffer;//对应操作系统pagecache
+    private volatile long storeTimestamp = 0;//最后一次存储时间戳
     private boolean firstCreateInQueue = false;
 
     public MappedFile() {
@@ -200,13 +200,14 @@ public class MappedFile extends ReferenceResource {
         assert messageExt != null;
         assert cb != null;
 
-        int currentPos = this.wrotePosition.get();
+        int currentPos = this.wrotePosition.get();//当前写入位置
 
         if (currentPos < this.fileSize) {
             ByteBuffer byteBuffer = writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();
             byteBuffer.position(currentPos);
             AppendMessageResult result;
             if (messageExt instanceof MessageExtBrokerInner) {
+                //该文件在整个文件序列中的偏移量，nio字节容器，最大可写字节数，消息内部封装实体
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt);
             } else if (messageExt instanceof MessageExtBatch) {
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt);
